@@ -333,11 +333,11 @@ def download(base_model):
     else:
         unet_folder = f"models/unet/{repo}"
     unet_path = os.path.join(unet_folder, model_file)
-    #if not os.path.exists(unet_path):
-    #    os.makedirs(unet_folder, exist_ok=True)
-    #    gr.Info(f"Downloading base model: {base_model}. Please wait. (You can check the terminal for the download progress)", duration=None)
-    #    print(f"download {base_model}")
-    #    hf_hub_download(repo_id=repo, local_dir=unet_folder, filename=model_file)
+    if not os.path.exists(unet_path):
+        os.makedirs(unet_folder, exist_ok=True)
+        gr.Info(f"Downloading base model: {base_model}. Please wait. (You can check the terminal for the download progress)", duration=None)
+        print(f"download {base_model}")
+        hf_hub_download(repo_id=repo, local_dir=unet_folder, filename=model_file)
 
     # download vae
     vae_folder = "models/vae"
@@ -350,12 +350,12 @@ def download(base_model):
 
     # download clip
     clip_folder = "models/clip"
-    clip_l_path = os.path.join(clip_folder, "ViT-L-14-TEXT-detail-improved-hiT-GmP-TE-only-HF.safetensors")
-    #if not os.path.exists(clip_l_path):
-    #    os.makedirs(clip_folder, exist_ok=True)
-    #    gr.Info(f"Downloading clip...")
-    #    print(f"download clip_l.safetensors")
-    #    hf_hub_download(repo_id="comfyanonymous/flux_text_encoders", local_dir=clip_folder, filename="clip_l.safetensors")
+    clip_l_path = os.path.join(clip_folder, "clip_l.safetensors")
+    if not os.path.exists(clip_l_path):
+        os.makedirs(clip_folder, exist_ok=True)
+        gr.Info(f"Downloading clip...")
+        print(f"download clip_l.safetensors")
+        hf_hub_download(repo_id="comfyanonymous/flux_text_encoders", local_dir=clip_folder, filename="clip_l.safetensors")
 
     # download t5xxl
     t5xxl_path = os.path.join(clip_folder, "t5xxl_fp16.safetensors")
@@ -445,9 +445,9 @@ def gen_sh(
     else:
         model_folder = f"models/unet/{repo}"
     model_path = os.path.join(model_folder, model_file)
-    pretrained_model_path = resolve_path("models/unet/flux1-dev2pro.safetensors")
+    pretrained_model_path = resolve_path(model_path)
 
-    clip_path = resolve_path("models/clip/ViT-L-14-TEXT-detail-improved-hiT-GmP-TE-only-HF.safetensors")
+    clip_path = resolve_path("models/clip/clip_l.safetensors")
     t5_path = resolve_path("models/clip/t5xxl_fp16.safetensors")
     ae_path = resolve_path("models/vae/ae.sft")
     sh = f"""accelerate launch {line_break}
@@ -524,7 +524,7 @@ keep_tokens = 1
 
 [[datasets]]
 resolution = {resolution}
-batch_size = 2
+batch_size = 1
 keep_tokens = 1
 
   [[datasets.subsets]]
@@ -923,12 +923,12 @@ with gr.Blocks(elem_id="app", theme=theme, css=css, fill_width=True) as demo:
                     print(f"model_names={model_names}")
                     base_model = gr.Dropdown(label="Base model (edit the models.yaml file to add more to this list)", choices=model_names, value=model_names[0])
                     vram = gr.Radio(["20G", "16G", "12G" ], value="20G", label="VRAM", interactive=True)
-                    num_repeats = gr.Number(value=2, precision=0, label="Repeat trains per image", interactive=True)
-                    max_train_epochs = gr.Number(label="Max Train Epochs", value=50, interactive=True)
+                    num_repeats = gr.Number(value=10, precision=0, label="Repeat trains per image", interactive=True)
+                    max_train_epochs = gr.Number(label="Max Train Epochs", value=16, interactive=True)
                     total_steps = gr.Number(0, interactive=False, label="Expected training steps")
                     sample_prompts = gr.Textbox("", lines=5, label="Sample Image Prompts (Separate with new lines)", interactive=True)
                     sample_every_n_steps = gr.Number(0, precision=0, label="Sample Image Every N Steps", interactive=True)
-                    resolution = gr.Number(value=1024, precision=0, label="Resize dataset images")
+                    resolution = gr.Number(value=512, precision=0, label="Resize dataset images")
                 with gr.Column():
                     gr.Markdown(
                         """# Step 2. Dataset
@@ -988,15 +988,15 @@ with gr.Blocks(elem_id="app", theme=theme, css=css, fill_width=True) as demo:
                     with gr.Column(min_width=300):
                         workers = gr.Number(label="--max_data_loader_n_workers", info="Number of Workers", value=2, interactive=True)
                     with gr.Column(min_width=300):
-                        learning_rate = gr.Textbox(label="--learning_rate", info="Learning Rate", value="3e-4", interactive=True)
+                        learning_rate = gr.Textbox(label="--learning_rate", info="Learning Rate", value="8e-4", interactive=True)
                     with gr.Column(min_width=300):
-                        save_every_n_epochs = gr.Number(label="--save_every_n_epochs", info="Save every N epochs", value=5, interactive=True)
+                        save_every_n_epochs = gr.Number(label="--save_every_n_epochs", info="Save every N epochs", value=4, interactive=True)
                     with gr.Column(min_width=300):
                         guidance_scale = gr.Number(label="--guidance_scale", info="Guidance Scale", value=1.0, interactive=True)
                     with gr.Column(min_width=300):
                         timestep_sampling = gr.Textbox(label="--timestep_sampling", info="Timestep Sampling", value="shift", interactive=True)
                     with gr.Column(min_width=300):
-                        network_dim = gr.Number(label="--network_dim", info="LoRA Rank", value=16, minimum=4, maximum=32, step=4, interactive=True)
+                        network_dim = gr.Number(label="--network_dim", info="LoRA Rank", value=4, minimum=4, maximum=128, step=4, interactive=True)
                     advanced_components, advanced_component_ids = init_advanced()
             with gr.Row():
                 terminal = LogsView(label="Train log", elem_id="terminal")
