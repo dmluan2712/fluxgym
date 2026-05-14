@@ -18,8 +18,8 @@ flux-schnell:
     base: black-forest-labs/FLUX.1-schnell
     license: apache-2.0
     file: flux1-schnell.safetensors
-bdsqlsz/flux1-dev2pro-single:
-    repo: bdsqlsz/flux1-dev2pro-single
+flux1-dev2pro:
+    repo: flux1-dev2pro
     base: black-forest-labs/FLUX.1-dev
     license: other
     license_name: flux-1-dev-non-commercial-license
